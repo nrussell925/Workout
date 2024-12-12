@@ -1,34 +1,48 @@
 package com.example.workoutapp.data
-
-import android.content.Context
 import androidx.room.Database
-import androidx.room.Room
 import androidx.room.RoomDatabase
 
-/**
- * Database class with a singleton Instance object.
- */
-@Database(entities = [Item::class], version = 1, exportSchema = false)
+import android.content.Context
+import androidx.room.Room
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
+
+val MIGRATION_1_2 = object : Migration(1, 2) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("ALTER TABLE workouts ADD COLUMN new_column TEXT NOT NULL DEFAULT ''")
+    }
+}
+
+@Database(entities = [Workout::class, Exercise::class], version = 5, exportSchema = false)
 abstract class WorkoutDatabase : RoomDatabase() {
 
-    abstract fun itemDao(): ItemDao
+    abstract fun workoutDao(): WorkoutDao
+    abstract fun exerciseDao(): ExerciseDao
 
     companion object {
         @Volatile
-        private var Instance: WorkoutDatabase? = null
+        private var INSTANCE: WorkoutDatabase? = null
 
+        fun getInstance(context: Context): WorkoutDatabase {
+            return INSTANCE ?: synchronized(this) {
+                val instance = Room.databaseBuilder(
+                    context.applicationContext,
+                    WorkoutDatabase::class.java,
+                    "workout_database"
+                ).fallbackToDestructiveMigration().build()
+                INSTANCE = instance
+                instance
+            }
+        }
         fun getDatabase(context: Context): WorkoutDatabase {
-            // if the Instance is not null, return it, otherwise create a new database instance.
-            return Instance ?: synchronized(this) {
-                Room.databaseBuilder(context, WorkoutDatabase::class.java, "item_database")
-                    /**
-                     * Setting this option in your app's database builder means that Room
-                     * permanently deletes all data from the tables in your database when it
-                     * attempts to perform a migration with no defined migration path.
-                     */
-                    .fallbackToDestructiveMigration()
-                    .build()
-                    .also { Instance = it }
+            return INSTANCE ?: synchronized(this) {
+                val instance = Room.databaseBuilder(
+                    context.applicationContext,
+                    WorkoutDatabase::class.java,
+                    "workout_database"
+                ).fallbackToDestructiveMigration().build()
+                INSTANCE = instance
+                instance
             }
         }
     }

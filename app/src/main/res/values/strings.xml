@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Workout App</string>
+    <string name="back_button">Back</string>
+    <string name="no_exercise_description">Oops!\\nNo exercises in the workout.\\nTap + to add.</string>
 </resources>
